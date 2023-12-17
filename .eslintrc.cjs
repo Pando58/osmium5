@@ -1,3 +1,5 @@
+const stylistic = require("@stylistic/eslint-plugin");
+
 module.exports = {
 	root: true,
 	extends: [
@@ -29,24 +31,45 @@ module.exports = {
 				parser: "@typescript-eslint/parser",
 			},
 		},
+		{
+			files: [".eslintrc.cjs"],
+			rules: {
+				"@typescript-eslint/no-var-requires": "off",
+			},
+		},
 	],
 	rules: {
 		"@typescript-eslint/no-unused-vars": "warn",
 		"@typescript-eslint/consistent-type-imports": "warn",
 
-		"@stylistic/indent": ["warn", "tab"],
-		"@stylistic/no-tabs": ["warn", { allowIndentationTabs: true }],
-		"@stylistic/quotes": ["warn", "double"],
-		"@stylistic/comma-dangle": ["warn", "always-multiline"],
-		"@stylistic/semi": ["warn", "always"],
-		"@stylistic/member-delimiter-style": "warn",
-		"@stylistic/eol-last": ["warn", "always"],
-		"@stylistic/no-multiple-empty-lines": ["warn", { max: 2, maxEOF: 1, maxBOF: 0 }],
-		"@stylistic/padded-blocks": ["warn", "never"],
-		"@stylistic/quote-props": ["warn", "consistent-as-needed"],
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		// @ts-ignore
+		...Object.fromEntries(Object.entries(stylistic.configs.customize({
+			indent: "tab",
+			quotes: "double",
+			semi: true,
+			jsx: false,
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		// @ts-ignore
+		}).rules).map(([k, v]) => [k, v === "error" ? "warn" : v[0] === "error" ? ["warn", ...v.slice(1)] : v])),
+		"@stylistic/member-delimiter-style": "warn", // Override 'none' default
+		"@stylistic/arrow-parens": ["warn", "as-needed", { requireForBlockBody: false }],
+
+		"svelte/indent": ["warn", { indent: "tab" }],
+		"svelte/no-useless-mustaches": "warn",
+		"svelte/first-attribute-linebreak": "warn",
+		"svelte/html-closing-bracket-spacing": "warn",
+		"svelte/html-quotes": "warn",
+		"svelte/html-self-closing": "warn",
+		"svelte/mustache-spacing": "warn",
+		"svelte/no-spaces-around-equal-signs-in-attribute": "warn",
+		"svelte/shorthand-attribute": "warn",
+		"svelte/shorthand-directive": "warn",
+		"svelte/spaced-html-comment": "warn",
 
 		"import/newline-after-import": "warn",
-		"import/no-duplicates": "warn",
+		"import/no-duplicates": ["warn", { "prefer-inline": true }],
+		"import/consistent-type-specifier-style": ["warn", "prefer-inline"],
 		"import/order": ["warn", {
 			"groups": ["builtin", "external", "parent", "sibling", "index", "type"],
 			"alphabetize": { order: "asc", orderImportKind: "asc" },
