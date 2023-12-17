@@ -12,7 +12,6 @@ in pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
     # Node
     nodejs_20
-    nodePackages.eslint_d
 
     # Rust
     cargo
