@@ -17,6 +17,7 @@ module.exports = {
 		sourceType: "module",
 		ecmaVersion: 2020,
 		extraFileExtensions: [".svelte"],
+		project: ["./tsconfig.json"],
 	},
 	env: {
 		browser: true,
@@ -39,7 +40,14 @@ module.exports = {
 		},
 	],
 	rules: {
-		"@typescript-eslint/no-unused-vars": "warn",
+		"@typescript-eslint/no-unused-vars": [
+			"warn",
+			{
+				argsIgnorePattern: "^_",
+				varsIgnorePattern: "^_",
+				caughtErrorsIgnorePattern: "^_",
+			},
+		],
 		"@typescript-eslint/consistent-type-imports": "warn",
 
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -52,8 +60,9 @@ module.exports = {
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore
 		}).rules).map(([k, v]) => [k, v === "error" ? "warn" : v[0] === "error" ? ["warn", ...v.slice(1)] : v])),
-		"@stylistic/member-delimiter-style": "warn", // Override 'none' default
 		"@stylistic/arrow-parens": ["warn", "as-needed", { requireForBlockBody: false }],
+		"@stylistic/brace-style": "warn",
+		"@stylistic/member-delimiter-style": "warn", // Override 'none' default
 
 		"svelte/indent": ["warn", { indent: "tab" }],
 		"svelte/no-useless-mustaches": "warn",

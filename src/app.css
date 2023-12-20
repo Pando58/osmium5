@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+	.debug {
+		@apply outline outline-1 -outline-offset-1 outline-green-500/40 outline-dashed;
+	}
+}
