@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getContext, onMount } from "svelte";
 	import { type RootContext, rootKey } from "$lib/ctxKeys";
-	import { type Pane } from "$lib/layout/Layout";
+	import { type Pane } from "$lib/layout/layout";
 
 	export let id: number;
 

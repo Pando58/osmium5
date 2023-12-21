@@ -3,7 +3,7 @@
 	import LayoutContainer from "$lib/components/LayoutContainer.svelte";
 	import WindowBar from "$lib/components/WindowBar.svelte";
 	import { rootKey, type RootContext } from "$lib/ctxKeys";
-	import { Layout } from "$lib/layout/Layout";
+	import { Layout } from "$lib/layout/layout";
 
 	const layout = new Layout();
 
