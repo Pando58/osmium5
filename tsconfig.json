@@ -9,7 +9,7 @@
 		"skipLibCheck": true,
 		"sourceMap": true,
 		"strict": true,
-		"importsNotUsedAsValues": "preserve"
+		"moduleResolution": "bundler"
 	},
 	"include": [
 		"./src/**/*.js",
@@ -21,7 +21,8 @@
 		"postcss.config.js",
 		"svelte.config.js",
 		"tailwind.config.js",
-		"vite.config.ts"
+		"vite.config.ts",
+		"playwright.config.ts"
 	]
 	// Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias
 	//
