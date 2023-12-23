@@ -62,6 +62,7 @@ module.exports = {
 		}).rules).map(([k, v]) => [k, v === "error" ? "warn" : v[0] === "error" ? ["warn", ...v.slice(1)] : v])),
 		"@stylistic/arrow-parens": ["warn", "as-needed", { requireForBlockBody: false }],
 		"@stylistic/brace-style": "warn",
+		"@stylistic/function-call-spacing": "warn",
 		"@stylistic/member-delimiter-style": "warn", // Override 'none' default
 
 		"svelte/indent": ["warn", { indent: "tab" }],

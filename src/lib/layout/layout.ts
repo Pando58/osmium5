@@ -1,13 +1,23 @@
+import { err, ok, type Result } from "$lib/result/result";
 import { generateId } from "$lib/utils/generateId";
 
 export class Layout {
 	panes: Record<number, PaneWrapped> = {};
-	rootListeners: {
-		[T in keyof RootEvents]: Record<number, (res: RootEvents[T]) => void>
-	} = {
-			create: {},
-			destroy: {},
-		};
+
+	constructor() {
+		this.panes[0] = this.initPane({
+			root: true,
+			split: false,
+		});
+	}
+
+	getPane(id: number): Result<Pane, Error> {
+		if (!(id in this.panes) || id === 0) {
+			return err(Error(`Pane #${id} does not exist`));
+		}
+
+		return ok(this.panes[id].pane);
+	}
 
 	createPane(config: "root" | ({
 		parentId: number;
@@ -15,163 +25,129 @@ export class Layout {
 		order: "append" | "prepend";
 	} | {
 		direction: "horizontal" | "vertical";
-	}))): void | Error {
+	}))): Result<0, Error> {
 		if (config === "root") {
-			if (Object.keys(this.panes).length > 0) {
-				return Error("Remove all panes before creating the root");
+			if (1 in this.panes) {
+				return err(Error("First pane already exists"));
 			}
 
-			this.panes[generateId(this.panes)] = this.initPane({
+			this.panes[1] = this.initPane({
 				size: 1,
 				unit: "weight",
-				parentId: null,
+				parentId: 0,
 				split: false,
 			});
 
-			for (const f of Object.values(this.rootListeners.create)) {
+			for (const f of Object.values(this.panes[0].listeners.split)) {
 				f({});
 			}
 
-			return;
+			return ok(0);
 		}
 
-		const { parentId } = config;
-
-		if (!(parentId in this.panes)) {
-			return Error(`Pane #${parentId} does not exist`);
+		if (config.parentId === 0 || !(config.parentId in this.panes)) {
+			return err(Error(`Pane #${config.parentId} does not exist`));
 		}
 
-		const parent = this.panes[parentId];
+		const parent = this.panes[config.parentId];
 
-		const newPane: Pane = {
+		if ("root" in parent.pane) {
+			return err(Error("Internal error"));
+		}
+
+		const newPaneTemplate: Pane = {
 			size: 100,
 			unit: "weight",
-			parentId,
+			parentId: config.parentId,
 			split: false,
 		};
 
 		if ("direction" in config) {
 			if (parent.pane.split) {
-				return Error(`Pane #${parentId} is already split, use 'order' instead`);
+				return err(Error(`Pane #${config.parentId} is already split, use 'order' instead`));
 			}
 
 			if (parent.pane.parentId !== null) {
 				const grandParent = this.panes[parent.pane.parentId].pane;
 
-				if (!grandParent.split) {
-					return Error("Grand parent pane is not split for some reason");
-				}
+				if (!("root" in grandParent)) {
+					if (!("direction" in grandParent)) {
+						return err(Error("Internal error"));
+					}
 
-				if (grandParent.direction === config.direction) {
-					return Error("The split direction must not be the same as the parent pane");
+					if (grandParent.direction === config.direction) {
+						return err(Error("The split direction must not be the same as the parent pane"));
+					}
 				}
 			}
 
-			const newPaneId1 = generateId(this.panes);
-			this.panes[newPaneId1] = this.initPane({ ...newPane });
-
-			const newPaneId2 = generateId(this.panes);
-			this.panes[newPaneId2] = this.initPane(newPane);
+			const pane1Id = generateId(this.panes);
+			this.panes[pane1Id] = this.initPane(newPaneTemplate);
+			const pane2Id = generateId(this.panes);
+			this.panes[pane2Id] = this.initPane(newPaneTemplate);
 
 			parent.pane = {
 				...parent.pane,
 				split: true,
-				childrenId: [newPaneId1, newPaneId2],
+				childrenId: [pane1Id, pane2Id],
 				direction: config.direction,
 			};
+		}
 
-			for (const f of Object.values(parent.listeners.split)) {
-				f({});
+		if ("order" in config) {
+			if (!parent.pane.split) {
+				return err(Error(`Pane #${config.parentId} has not been split yet, use 'direction' instead`));
 			}
 
-			return;
+			const paneId = generateId(this.panes);
+			this.panes[paneId] = this.initPane(newPaneTemplate);
+
+			parent.pane = {
+				...parent.pane,
+				childrenId: config.order === "append"
+					? [...parent.pane.childrenId, paneId]
+					: [paneId, ...parent.pane.childrenId],
+			};
 		}
 
-		if (!parent.pane.split) {
-			return Error(`Pane #${parentId} is not split, use 'direction' instead`);
-		}
-
-		const newPaneId1 = generateId(this.panes);
-		this.panes[newPaneId1] = this.initPane(newPane);
-
-		parent.pane = {
-			...parent.pane,
-			childrenId: config.order === "append"
-				? [...parent.pane.childrenId, newPaneId1]
-				: [newPaneId1, ...parent.pane.childrenId],
-		};
-
-		for (const f of Object.values(parent.listeners.split)) {
+		for (const f of Object.values(this.panes[config.parentId].listeners.split)) {
 			f({});
 		}
 
-		return;
+		return ok(0);
 	}
 
-	closePane(id: number): void | Error {
-		if (!(id in this.panes)) {
-			return Error(`Pane #${id} does not exist`);
+	on<T extends keyof PaneEvents>(key: T, paneId: number | "root", f: (res: PaneEvents[T]) => void): Result<number, Error> {
+		if (paneId !== "root" && (!(paneId in this.panes) || paneId === 0)) {
+			return err(Error(`Pane #${paneId} does not exist`));
 		}
 
-		// ...
-	}
-
-	getPane(id: number): Pane | Error {
-		if (!(id in this.panes)) {
-			return Error(`Pane #${id} does not exist`);
-		}
-
-		return this.panes[id].pane;
-	}
-
-	onPane<T extends keyof PaneEvents>(key: T, paneId: number, f: (res: PaneEvents[T]) => void): number | Error {
-		if (!(paneId in this.panes)) {
-			return Error(`Pane #${paneId} does not exist`);
-		}
-
-		const { listeners } = this.panes[paneId];
+		const { listeners } = this.panes[paneId === "root" ? 0 : paneId];
 		const listenerId = generateId(listeners[key]);
 		listeners[key][listenerId] = f;
 
-		return listenerId;
+		return ok(listenerId);
 	}
 
-	unsubPane(key: keyof PaneEvents, paneId: number, listenerId: number): void | Error {
-		if (!(paneId in this.panes)) {
-			return Error(`Pane #${paneId} does not exist`);
+	unsub(key: keyof PaneEvents, paneId: number | "root", listenerId: number): Result<0, Error> {
+		if (paneId !== "root" && (!(paneId in this.panes) || paneId === 0)) {
+			return err(Error(`Pane #${paneId} does not exist`));
 		}
 
-		const { listeners } = this.panes[paneId];
+		const { listeners } = this.panes[paneId === "root" ? 0 : paneId];
 
 		if (!(listenerId in listeners[key])) {
-			return Error(`Listener #${listenerId} does not exist`);
+			return err(Error(`'${key}' listener #${listenerId} does not exist in pane #${paneId}`));
 		}
 
 		delete listeners[key][listenerId];
 
-		return;
-	}
-
-	onRoot<T extends keyof RootEvents>(key: T, f: (res: RootEvents[T]) => void): number | Error {
-		const listenerId = generateId(this.rootListeners[key]);
-		this.rootListeners[key][listenerId] = f;
-
-		return listenerId;
-	}
-
-	unsubRoot(key: keyof RootEvents, listenerId: number): void | Error {
-		if (!(listenerId in this.rootListeners[key])) {
-			return Error(`Listener #${listenerId} does not exist`);
-		}
-
-		delete this.rootListeners[key][listenerId];
-
-		return;
+		return ok(0);
 	}
 
 	private initPane(pane: Pane): PaneWrapped {
 		return {
-			pane: pane,
+			pane: { ...pane },
 			listeners: {
 				split: {},
 				close: {},
@@ -181,6 +157,9 @@ export class Layout {
 }
 
 export type Pane = {
+	root: true;
+	split: boolean;
+} | ({
 	size: number;
 	unit: "weight" | "pixels";
 	parentId: number | null;
@@ -190,7 +169,7 @@ export type Pane = {
 	direction: "horizontal" | "vertical";
 } | {
 	split: false;
-});
+}));
 
 type PaneWrapped = {
 	pane: Pane;
@@ -202,9 +181,4 @@ type PaneWrapped = {
 type PaneEvents = {
 	"split": Record<string, never>;
 	"close": Record<string, never>;
-};
-
-type RootEvents = {
-	"create": Record<string, never>;
-	"destroy": Record<string, never>;
 };

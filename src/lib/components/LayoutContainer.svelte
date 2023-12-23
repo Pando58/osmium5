@@ -8,27 +8,18 @@
 	let rootPane = false;
 
 	onMount(() => {
-		const id1 = layout.onRoot("create", () => rootPane = true);
-		const id2 = layout.onRoot("destroy", () => rootPane = false);
+		const id1 = layout.on("split", "root", () => rootPane = true).unwrapOrLog(null);
+		const id2 = layout.on("close", "root", () => rootPane = false).unwrapOrLog(null);
 
 		return () => {
-			if (id1 instanceof Error) {
-				console.error(id1);
-			} else {
-				layout.unsubRoot("create", id1);
-			}
-
-			if (id2 instanceof Error) {
-				console.error(id2);
-			} else {
-				layout.unsubRoot("create", id2);
-			}
+			if (id1 !== null) layout.unsub("split", "root", id1);
+			if (id2 !== null) layout.unsub("close", "root", id2);
 		};
 	});
 </script>
 
 <div class="flex-1 p-1 flex">
 	{#if rootPane}
-		<LayoutPane id={0} />
+		<LayoutPane id={1} />
 	{/if}
 </div>

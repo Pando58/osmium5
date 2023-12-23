@@ -11,31 +11,20 @@
 
 	onMount(() => {
 		function getPane() {
-			const p = layout.getPane(id);
-
-			if (p instanceof Error) {
-				pane = null;
-				console.error(p);
-				return;
-			}
-
-			pane = p;
+			pane = layout.getPane(id).unwrapOrLog(null);
 		}
 
 		getPane();
 
-		const listenerId = layout.onPane("split", id, getPane);
+		const listenerId = layout.on("split", id, getPane).unwrapOrLog(null);
 
-		if (listenerId instanceof Error) {
-			console.error(listenerId);
-			return;
-		}
-
-		return () => layout.unsubPane("split", id, listenerId);
+		return () => {
+			if (listenerId !== null) layout.unsub("split", id, listenerId);
+		};
 	});
 </script>
 
-{#if pane}
+{#if pane && !("root" in pane)}
 	<div
 		class={`flex-1 flex gap-1 ${!pane.split && "bg-zinc-900  rounded-md border-t border-t-zinc-800 shadow shadow-black/40"}`}
 		class:flex-col={pane.split && pane.direction === "vertical"}
