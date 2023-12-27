@@ -38,6 +38,8 @@ export class Layout {
 				split: false,
 			});
 
+			this.panes[0].pane.split = true;
+
 			for (const f of Object.values(this.panes[0].listeners.split)) {
 				f({});
 			}
@@ -117,9 +119,79 @@ export class Layout {
 		return ok(0);
 	}
 
+	closePane(id: number): Result<0, Error> {
+		if (id === 0 || !(id in this.panes)) {
+			return err(Error(`Pane #${id} does not exist`));
+		}
+
+		const { pane, listeners } = this.panes[id];
+
+		if ("childrenId" in pane) {
+			for (const childId of pane.childrenId) {
+				this.closePane(childId);
+			}
+		}
+
+		if (!("parentId" in pane)) {
+			return err(Error("Internal error"));
+		}
+
+		const parent = this.panes[pane.parentId];
+		let notifyParent = false;
+
+		if (pane.parentId !== 0) {
+			if (!("childrenId" in parent.pane) || !parent.pane.childrenId.includes(id)) {
+				return err(Error("Internal error"));
+			}
+
+			parent.pane.childrenId = parent.pane.childrenId.filter(i => i !== id);
+
+			if (parent.pane.childrenId.length !== 0) {
+				notifyParent = true;
+			}
+
+			if (parent.pane.childrenId.length === 1) {
+				const { size, unit, parentId } = parent.pane;
+
+				this.closePane(parent.pane.childrenId[0]);
+
+				parent.pane = {
+					size,
+					unit,
+					parentId,
+					split: false,
+				};
+			}
+		} else {
+			this.panes[0].pane.split = false;
+			notifyParent = true;
+		}
+
+		for (const f of Object.values(listeners.close)) {
+			f({});
+		}
+
+		if (notifyParent) {
+			for (const f of Object.values(parent.listeners.unsplit)) {
+				f({});
+			}
+		}
+
+		listeners.split = {};
+		listeners.unsplit = {};
+		listeners.close = {};
+		delete this.panes[id];
+
+		return ok(0);
+	}
+
 	on<T extends keyof PaneEvents>(key: T, paneId: number | "root", f: (res: PaneEvents[T]) => void): Result<number, Error> {
 		if (paneId !== "root" && (!(paneId in this.panes) || paneId === 0)) {
 			return err(Error(`Pane #${paneId} does not exist`));
+		}
+
+		if (paneId === "root" && key === "close") {
+			return err(Error("The root cannot be closed"));
 		}
 
 		const { listeners } = this.panes[paneId === "root" ? 0 : paneId];
@@ -150,6 +222,7 @@ export class Layout {
 			pane: { ...pane },
 			listeners: {
 				split: {},
+				unsplit: {},
 				close: {},
 			},
 		};
@@ -162,7 +235,7 @@ export type Pane = {
 } | ({
 	size: number;
 	unit: "weight" | "pixels";
-	parentId: number | null;
+	parentId: number;
 } & ({
 	split: true;
 	childrenId: number[];
@@ -180,5 +253,6 @@ type PaneWrapped = {
 
 type PaneEvents = {
 	"split": Record<string, never>;
+	"unsplit": Record<string, never>;
 	"close": Record<string, never>;
 };

@@ -9,11 +9,11 @@
 
 	onMount(() => {
 		const id1 = layout.on("split", "root", () => rootPane = true).unwrapOrLog(null);
-		const id2 = layout.on("close", "root", () => rootPane = false).unwrapOrLog(null);
+		const id2 = layout.on("unsplit", "root", () => rootPane = false).unwrapOrLog(null);
 
 		return () => {
 			if (id1 !== null) layout.unsub("split", "root", id1);
-			if (id2 !== null) layout.unsub("close", "root", id2);
+			if (id2 !== null) layout.unsub("unsplit", "root", id2);
 		};
 	});
 </script>

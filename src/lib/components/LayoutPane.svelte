@@ -16,10 +16,14 @@
 
 		getPane();
 
-		const listenerId = layout.on("split", id, getPane).unwrapOrLog(null);
+		const id1 = layout.on("split", id, () => getPane()).unwrapOrLog(null);
+		const id2 = layout.on("unsplit", id, () => getPane()).unwrapOrLog(null);
+		const id3 = layout.on("close", id, () => pane = null).unwrapOrLog(null);
 
 		return () => {
-			if (listenerId !== null) layout.unsub("split", id, listenerId);
+			if (id1 !== null) layout.unsub("split", id, id1);
+			if (id2 !== null) layout.unsub("unsplit", id, id2);
+			if (id3 !== null) layout.unsub("close", id, id3);
 		};
 	});
 </script>
