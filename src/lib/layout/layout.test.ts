@@ -42,7 +42,7 @@ describe("get pane", () => {
 
 describe("create pane", () => {
 	it("creates the first pane", () => {
-		layout.createPane("root");
+		expect(layout.createPane("root").isOk()).toBe(true);
 
 		expect(layout.panes[1].pane).toEqual(expect.objectContaining({
 			parentId: 0,
@@ -154,6 +154,17 @@ describe("create pane", () => {
 		notified2 = false;
 		layout.createPane({ parentId: 2, order: "append" });
 		expect(notified2).toBe(true);
+	});
+
+	it("notifies the pane after updating it", () => {
+		layout.createPane("root");
+		layout.createPane({ parentId: 1, direction: "horizontal" });
+
+		layout.on("split", 2, () => {
+			expect(layout.panes[2].pane.split).toBe(true);
+		});
+
+		layout.createPane({ parentId: 2, direction: "vertical" });
 	});
 });
 
@@ -414,6 +425,80 @@ describe("close pane", () => {
 		layout.closePane(1);
 
 		expect(notified).toBe(true);
+	});
+});
+
+describe("resize pane", () => {
+	it("changes the size of the pane", () => {
+		layout.createPane("root");
+		layout.createPane({ parentId: 1, direction: "horizontal" });
+
+		expect(layout.resizePane(2, 50).isOk()).toBe(true);
+		expect((layout.panes[2].pane as { size: number }).size).toBe(50);
+		expect(layout.resizePane(2, 83).isOk()).toBe(true);
+		expect((layout.panes[2].pane as { size: number }).size).toBe(83);
+	});
+
+	it("fails if the pane does not exist", () => {
+		expect(layout.resizePane(2, 70).isOk()).toBe(false);
+	});
+
+	it("fails if the given pane id is either 0 or 1", () => {
+		layout.createPane("root");
+
+		expect(layout.resizePane(0, 40).isOk()).toBe(false);
+		expect(layout.resizePane(1, 40).isOk()).toBe(false);
+	});
+
+	it("keeps the size unit if no other argument is given", () => {
+		layout.createPane("root");
+		layout.createPane({ parentId: 1, direction: "horizontal" });
+
+		const unit = (layout.panes[2].pane as { unit: "weight" | "exact" }).unit;
+
+		layout.resizePane(2, 65);
+
+		expect((layout.panes[2].pane as { unit: "weight" | "exact" }).unit).toBe(unit);
+	});
+
+	it("switches to the given unit", () => {
+		layout.createPane("root");
+		layout.createPane({ parentId: 1, direction: "horizontal" });
+
+		layout.resizePane(2, 40, "exact");
+
+		expect((layout.panes[2].pane as { unit: "weight" | "exact" }).unit).toBe("exact");
+
+		layout.resizePane(2, 40, "weight");
+
+		expect((layout.panes[2].pane as { unit: "weight" | "exact" }).unit).toBe("weight");
+	});
+
+	it("notifies the pane about the resize", () => {
+		let notified = false;
+
+		layout.createPane("root");
+		layout.createPane({ parentId: 1, direction: "vertical" });
+
+		layout.on("resize", 2, () => notified = true);
+
+		layout.resizePane(2, 140);
+
+		expect(notified).toBe(true);
+	});
+
+	it("notifies the pane after updating it", () => {
+		layout.createPane("root");
+		layout.createPane({ parentId: 1, direction: "horizontal" });
+
+		layout.on("resize", 2, () => {
+			const pane = layout.panes[2].pane as { size: number; unit: "weight" | "exact" };
+
+			expect(pane.size).toBe(245);
+			expect(pane.unit).toBe("exact");
+		});
+
+		layout.resizePane(2, 245, "exact");
 	});
 });
 

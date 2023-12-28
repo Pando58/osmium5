@@ -185,6 +185,31 @@ export class Layout {
 		return ok(0);
 	}
 
+	resizePane(id: number, size: number, unit?: "weight" | "exact"): Result<0, Error> {
+		if (id === 0 || !(id in this.panes)) {
+			return err(Error(`Pane #${id} does not exist`));
+		}
+
+		if (id === 1) {
+			return err(Error(`Pane #1 cannot be resized`));
+		}
+
+		const { pane, listeners } = this.panes[id];
+
+		if (!("size" in pane)) {
+			return err(Error("Internal error"));
+		}
+
+		pane.size = size;
+		if (unit) pane.unit = unit;
+
+		for (const f of Object.values(listeners.resize)) {
+			f({});
+		}
+
+		return ok(0);
+	}
+
 	on<T extends keyof PaneEvents>(key: T, paneId: number | "root", f: (res: PaneEvents[T]) => void): Result<number, Error> {
 		if (paneId !== "root" && (!(paneId in this.panes) || paneId === 0)) {
 			return err(Error(`Pane #${paneId} does not exist`));
@@ -224,6 +249,7 @@ export class Layout {
 				split: {},
 				unsplit: {},
 				close: {},
+				resize: {},
 			},
 		};
 	}
@@ -234,7 +260,7 @@ export type Pane = {
 	split: boolean;
 } | ({
 	size: number;
-	unit: "weight" | "pixels";
+	unit: "weight" | "exact";
 	parentId: number;
 } & ({
 	split: true;
@@ -251,8 +277,9 @@ type PaneWrapped = {
 	};
 };
 
-type PaneEvents = {
+export type PaneEvents = {
 	"split": Record<string, never>;
 	"unsplit": Record<string, never>;
 	"close": Record<string, never>;
+	"resize": Record<string, never>;
 };

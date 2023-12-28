@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getContext, onMount } from "svelte";
 	import { type RootContext, rootKey } from "$lib/ctxKeys";
-	import { type Pane } from "$lib/layout/layout";
+	import { type Pane, type PaneEvents } from "$lib/layout/layout";
 
 	export let id: number;
 
@@ -16,14 +16,17 @@
 
 		getPane();
 
-		const id1 = layout.on("split", id, () => getPane()).unwrapOrLog(null);
-		const id2 = layout.on("unsplit", id, () => getPane()).unwrapOrLog(null);
-		const id3 = layout.on("close", id, () => pane = null).unwrapOrLog(null);
+		const listeners: [keyof PaneEvents, number | null][] = ([
+			["split", () => getPane()],
+			["unsplit", () => getPane()],
+			["close", () => pane = null],
+			["resize", () => getPane()],
+		] as [keyof PaneEvents, () => void][]).map(([event, f]) => [event, layout.on(event, id, f).unwrapOrLog(null)]);
 
 		return () => {
-			if (id1 !== null) layout.unsub("split", id, id1);
-			if (id2 !== null) layout.unsub("unsplit", id, id2);
-			if (id3 !== null) layout.unsub("close", id, id3);
+			for (const [event, listener] of listeners) {
+				if (listener !== null) layout.unsub(event, id, listener);
+			}
 		};
 	});
 </script>
@@ -33,7 +36,7 @@
 		class={`flex-1 flex gap-1 ${!pane.split && "bg-zinc-900  rounded-md border-t border-t-zinc-800 shadow shadow-black/40"}`}
 		class:flex-col={pane.split && pane.direction === "vertical"}
 		style:flex={pane.unit === "weight" ? pane.size : null}
-		style:width={pane.unit === "pixels" ? `${pane.size}px` : null}
+		style:flex-basis={pane.unit === "exact" ? `${pane.size}em` : null}
 	>
 		{#if pane.split}
 			{#each pane.childrenId as i (i)}
