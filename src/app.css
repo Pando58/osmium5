@@ -4,6 +4,6 @@
 
 @layer utilities {
 	.debug {
-		@apply outline outline-1 -outline-offset-1 outline-green-500/40 outline-dashed;
+		@apply outline-dashed outline-1 -outline-offset-1 outline-green-500/40;
 	}
 }
