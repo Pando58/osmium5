@@ -38,6 +38,12 @@ module.exports = {
 				"@typescript-eslint/no-var-requires": "off",
 			},
 		},
+		{
+			files: ["*.test.ts"],
+			rules: {
+				"no-empty-pattern": ["warn", { allowObjectPatternsAsParameters: true }],
+			},
+		},
 	],
 	rules: {
 		"@typescript-eslint/no-unused-vars": [

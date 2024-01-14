@@ -13,6 +13,14 @@ export class Result<T, E extends Error> {
 		return this.value.variant === "err";
 	}
 
+	map<U>(f: (v: T) => U): Result<U, E> {
+		const { variant, value } = this.value;
+
+		if (variant === "err") return err(value);
+
+		return ok(f(value));
+	}
+
 	unwrapOrElse<U>(f: (e: E) => U) {
 		const { variant, value } = this.value;
 

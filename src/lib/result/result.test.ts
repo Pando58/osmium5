@@ -24,6 +24,11 @@ describe("result type", () => {
 		expect(err(Error("msg")).isErr()).toBe(true);
 	});
 
+	test("map", () => {
+		expect(ok(2).map(v => v * 2)).toEqual(ok(4));
+		expect(err(Error("msg")).map(v => v)).toEqual(err(Error("msg")));
+	});
+
 	test("unwrap or else", () => {
 		expect(ok(1).unwrapOrElse(_ => 2)).toBe(1);
 		expect(err(Error("msg")).unwrapOrElse(_ => 2)).toBe(2);
