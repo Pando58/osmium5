@@ -5,7 +5,7 @@ import { type Result, ok } from "$lib/result/result";
 import { generateId } from "$lib/utils/generateId";
 
 export class Timeline {
-	tracks: number[] = [];
+	trackIds: number[] = [];
 
 	static create(state: State): Result<0, ActionError> {
 		const timelineId = generateId(state.timelines);

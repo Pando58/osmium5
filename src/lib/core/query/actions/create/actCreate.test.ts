@@ -77,11 +77,11 @@ describe("create", () => {
 		it("adds the track id to the timeline", () => {
 			query(state).create().timeline();
 
-			expect(state.timelines[0].tracks).toEqual([]);
+			expect(state.timelines[0].trackIds).toEqual([]);
 
 			query(state).create().track(0);
 
-			expect(state.timelines[0].tracks).toEqual([0]);
+			expect(state.timelines[0].trackIds).toEqual([0]);
 
 			query(state).create().timeline();
 			query(state).create().track(0);
@@ -89,7 +89,7 @@ describe("create", () => {
 			query(state).create().track(0);
 			query(state).create().track(0);
 
-			expect(state.timelines[0].tracks).toEqual([0, 1, 3, 4]);
+			expect(state.timelines[0].trackIds).toEqual([0, 1, 3, 4]);
 		});
 
 		it("emits the 'track_created' event", () => {
@@ -166,11 +166,11 @@ describe("create", () => {
 			query(state).create().timeline();
 			query(state).create().track(0);
 
-			expect(state.tracks[0].sections).toEqual([]);
+			expect(state.tracks[0].sectionIds).toEqual([]);
 
 			query(state).create().section(0);
 
-			expect(state.tracks[0].sections).toEqual([0]);
+			expect(state.tracks[0].sectionIds).toEqual([0]);
 
 			query(state).create().timeline();
 			query(state).create().track(0);
@@ -179,7 +179,7 @@ describe("create", () => {
 			query(state).create().section(0);
 			query(state).create().section(0);
 
-			expect(state.tracks[0].sections).toEqual([0, 1, 3, 4]);
+			expect(state.tracks[0].sectionIds).toEqual([0, 1, 3, 4]);
 		});
 
 		it("emits the 'section_created' event", () => {

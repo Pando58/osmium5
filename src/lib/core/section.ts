@@ -14,7 +14,7 @@ export class Section {
 		const sectionId = generateId(state.sections);
 
 		state.sections[sectionId] = new Track();
-		state.tracks[trackId].sections.push(sectionId);
+		state.tracks[trackId].sectionIds.push(sectionId);
 
 		emit(state, "section_created", { id: sectionId, trackId });
 
